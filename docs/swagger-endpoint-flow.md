@@ -138,10 +138,10 @@ Copia el `accessToken`.
 En Swagger:
 
 1. Clic en `Authorize`.
-2. Escribe:
+2. Pega solo el valor del JWT, sin escribir `Bearer`:
 
 ```text
-Bearer JWT_ACCESS_TOKEN
+JWT_ACCESS_TOKEN
 ```
 
 3. Clic en `Authorize`.
@@ -156,7 +156,7 @@ Endpoint:
 GET /api/users/me
 ```
 
-Requiere:
+Requiere header HTTP:
 
 ```text
 Authorization: Bearer JWT_ACCESS_TOKEN
