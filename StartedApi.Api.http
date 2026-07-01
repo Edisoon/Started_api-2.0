@@ -1,0 +1,75 @@
+@baseUrl = https://localhost:7228
+@accessToken = replace_with_access_token
+@refreshToken = replace_with_refresh_token
+@userId = replace_with_user_id
+
+### Register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Password123!",
+  "confirmPassword": "Password123!",
+  "firstName": "Admin",
+  "lastName": "User"
+}
+
+### Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Password123!"
+}
+
+### Refresh token
+POST {{baseUrl}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### My profile
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{accessToken}}
+
+### Update my profile
+PUT {{baseUrl}}/api/users/me
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Edison",
+  "lastName": "Lopez"
+}
+
+### List users
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{accessToken}}
+
+### Create role
+POST {{baseUrl}}/api/roles
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Manager",
+  "description": "Management role"
+}
+
+### Assign role
+POST {{baseUrl}}/api/roles/assign
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "roleName": "Manager"
+}
+
+### User roles
+GET {{baseUrl}}/api/roles/users/{{userId}}
+Authorization: Bearer {{accessToken}}
