@@ -55,9 +55,7 @@ Resultado esperado:
   "success": true,
   "message": "User registered successfully.",
   "data": {
-    "message": "User registered successfully. Confirm email before login.",
-    "userId": "GUID_DEL_USUARIO",
-    "confirmationToken": "TOKEN_DE_CONFIRMACION_SOLO_EN_DEVELOPMENT"
+    "message": "User registered successfully. You can now login."
   },
   "errors": []
 }
@@ -65,45 +63,9 @@ Resultado esperado:
 
 Si el usuario ya existe, es normal recibir `400 Bad Request`.
 
-## 2. Confirmar email
+Nota: en esta version la confirmacion de email no es obligatoria. El usuario creado por `POST /api/auth/register` queda listo para iniciar sesion.
 
-Endpoint:
-
-```http
-POST /api/auth/confirm-email
-```
-
-Body:
-
-```json
-{
-  "userId": "GUID_DEL_USUARIO",
-  "token": "TOKEN_DE_CONFIRMACION"
-}
-```
-
-En ambiente `Development`, el endpoint de registro devuelve `userId` y `confirmationToken`, y tambien registra el token en los logs de la API.
-
-Usa esos valores en Swagger:
-
-```json
-{
-  "userId": "GUID_DEL_USUARIO_DEVUELTO_EN_REGISTER",
-  "token": "TOKEN_DE_CONFIRMACION_DEVUELTO_EN_REGISTER"
-}
-```
-
-Si estas probando una cuenta creada antes de esta mejora y no tienes el token, puedes confirmar manualmente en SQL Server:
-
-```sql
-UPDATE AspNetUsers
-SET EmailConfirmed = 1
-WHERE Email = 'edisonlopez1992@gmail.com';
-```
-
-Sin `EmailConfirmed = 1`, el login falla porque `RequireConfirmedEmail` esta activo.
-
-## 3. Login
+## 2. Login
 
 Endpoint:
 
@@ -146,7 +108,7 @@ Resultado esperado:
 
 Copia el `accessToken`.
 
-## 4. Autorizar Swagger
+## 3. Autorizar Swagger
 
 En Swagger:
 
@@ -160,6 +122,33 @@ JWT_ACCESS_TOKEN
 3. Clic en `Authorize`.
 
 Desde este punto puedes probar endpoints protegidos.
+
+## 4. Confirmar email, opcional/no requerido
+
+Este endpoint existe en el API, pero no se necesita para el flujo actual porque `RequireConfirmedEmail` esta desactivado y los usuarios creados por `register` quedan auto-confirmados.
+
+Endpoint:
+
+```http
+POST /api/auth/confirm-email
+```
+
+Body:
+
+```json
+{
+  "userId": "GUID_DEL_USUARIO",
+  "token": "TOKEN_DE_CONFIRMACION"
+}
+```
+
+Si tienes usuarios antiguos con `EmailConfirmed = 0`, el login tambien debe funcionar con la configuracion actual. Si quieres dejar consistente el dato en base de datos para pruebas locales, puedes actualizarlo manualmente:
+
+```sql
+UPDATE AspNetUsers
+SET EmailConfirmed = 1
+WHERE Email = 'edisonlopez1992@gmail.com';
+```
 
 ## 5. Obtener perfil propio
 
@@ -477,22 +466,22 @@ userId: GUID_DEL_USUARIO
 ## Orden recomendado completo
 
 1. `POST /api/auth/register`
-2. `POST /api/auth/confirm-email` usando `userId` y `confirmationToken` devueltos en Development.
-3. `POST /api/auth/login`
-4. Clic en `Authorize` y pegar `Bearer JWT_ACCESS_TOKEN`.
-5. `GET /api/users/me`
-6. `PUT /api/users/me`
-7. `POST /api/auth/change-password`
-8. `POST /api/auth/refresh-token`
-9. Asignar rol `Admin` manualmente para pruebas locales.
-10. Hacer login de nuevo.
-11. `GET /api/users`
-12. `GET /api/users/{id}`
-13. `PATCH /api/users/{id}/status`
-14. `POST /api/roles`
-15. `GET /api/roles`
-16. `POST /api/roles/assign`
-17. `GET /api/roles/users/{userId}`
-18. `POST /api/roles/remove`
+2. `POST /api/auth/login`
+3. Clic en `Authorize` y pegar `JWT_ACCESS_TOKEN`.
+4. `GET /api/users/me`
+5. `PUT /api/users/me`
+6. `POST /api/auth/change-password`
+7. `POST /api/auth/refresh-token`
+8. Asignar rol `Admin` manualmente para pruebas locales.
+9. Hacer login de nuevo.
+10. `GET /api/users`
+11. `GET /api/users/{id}`
+12. `PATCH /api/users/{id}/status`
+13. `POST /api/roles`
+14. `GET /api/roles`
+15. `POST /api/roles/assign`
+16. `GET /api/roles/users/{userId}`
+17. `POST /api/roles/remove`
+18. `POST /api/auth/confirm-email`, opcional/no requerido en esta configuracion.
 19. `POST /api/auth/revoke-refresh-token`
 20. `POST /api/auth/logout`

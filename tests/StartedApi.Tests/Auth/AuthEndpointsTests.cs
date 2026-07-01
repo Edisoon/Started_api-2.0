@@ -2,7 +2,10 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using StartedApi.Application.Auth;
+using StartedApi.Infrastructure.Persistence;
 using StartedApi.Tests.Common;
 
 namespace StartedApi.Tests.Auth;
@@ -32,34 +35,29 @@ public sealed class AuthEndpointsTests
     }
 
     [Fact]
-    public async Task Register_ReturnsConfirmationToken_InDevelopment_AndConfirmEmailAllowsLogin()
+    public async Task Register_AutoConfirmsUser_AndAllowsLoginWithoutConfirmationEndpoint()
     {
-        await using var factory = new StartedApiWebApplicationFactory("Development");
+        await using var factory = new StartedApiWebApplicationFactory();
         using var client = factory.CreateClient();
 
         var request = new RegisterRequest(
-            "dev-confirm@example.com",
+            "direct-login@example.com",
             "Password123!",
             "Password123!",
-            "Dev",
-            "Confirm");
+            "Direct",
+            "Login");
 
         using var registerResponse = await client.PostAsJsonAsync("/api/auth/register", request);
-        var registerJson = await JsonDocument.ParseAsync(await registerResponse.Content.ReadAsStreamAsync());
-        var data = registerJson.RootElement.GetProperty("data");
-        var userId = data.GetProperty("userId").GetGuid();
-        var confirmationToken = data.GetProperty("confirmationToken").GetString();
-
-        using var confirmResponse = await client.PostAsJsonAsync(
-            "/api/auth/confirm-email",
-            new ConfirmEmailRequest(userId, confirmationToken!));
         using var loginResponse = await client.PostAsJsonAsync(
             "/api/auth/login",
-            new LoginRequest("dev-confirm@example.com", "Password123!"));
+            new LoginRequest("direct-login@example.com", "Password123!"));
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var user = await dbContext.Users.SingleAsync(user => user.Email == "direct-login@example.com");
 
         registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        confirmationToken.Should().NotBeNullOrWhiteSpace();
-        confirmResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        user.EmailConfirmed.Should().BeTrue();
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 

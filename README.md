@@ -73,6 +73,7 @@ dotnet test StartedApi.sln
 
 - Password hashing lo maneja ASP.NET Core Identity.
 - Login usa JWT access tokens de vida corta.
+- El login no requiere confirmacion de email en la configuracion actual; los usuarios registrados por la API quedan auto-confirmados.
 - Refresh tokens se guardan como hash SHA-256, no en texto plano.
 - Los endpoints administrativos requieren rol `Admin`.
 - Los endpoints de perfil requieren usuario autenticado.
@@ -81,7 +82,7 @@ dotnet test StartedApi.sln
 ## Endpoints principales
 
 - `POST /api/auth/register`
-- `POST /api/auth/confirm-email`
+- `POST /api/auth/confirm-email` (opcional en la configuracion actual)
 - `POST /api/auth/login`
 - `POST /api/auth/logout`
 - `POST /api/auth/refresh-token`

@@ -3,7 +3,7 @@
 | Metodo | Ruta | Auth | Roles | Descripcion |
 | --- | --- | --- | --- | --- |
 | POST | `/api/auth/register` | No | Publico | Registra usuario |
-| POST | `/api/auth/confirm-email` | No | Publico | Confirma email |
+| POST | `/api/auth/confirm-email` | No | Publico | Confirma email, opcional en la configuracion actual |
 | POST | `/api/auth/login` | No | Publico | Inicia sesion |
 | POST | `/api/auth/logout` | Si | Usuario | Revoca refresh token |
 | POST | `/api/auth/refresh-token` | No | Publico | Rota refresh token y emite access token |
