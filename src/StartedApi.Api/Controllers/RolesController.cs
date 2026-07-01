@@ -35,6 +35,26 @@ public sealed class RolesController : ControllerBase
         return ToActionResult(result);
     }
 
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<ApiResponse<RoleResponse>>> Update(
+        Guid id,
+        UpdateRoleRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _roleService.UpdateAsync(id, request, cancellationToken);
+        return ToActionResult(result);
+    }
+
+    [HttpPatch("{id:guid}/status")]
+    public async Task<ActionResult<ApiResponse<RoleResponse>>> UpdateStatus(
+        Guid id,
+        UpdateRoleStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _roleService.UpdateStatusAsync(id, request, cancellationToken);
+        return ToActionResult(result);
+    }
+
     [HttpPost("assign")]
     public async Task<ActionResult<ApiResponse<AuthMessageResponse>>> Assign(
         AssignRoleRequest request,

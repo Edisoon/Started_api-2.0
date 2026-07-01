@@ -18,6 +18,8 @@
 | PATCH | `/api/users/{id}/status` | Si | Admin | Activa/desactiva usuario |
 | POST | `/api/roles` | Si | Admin | Crea rol |
 | GET | `/api/roles` | Si | Admin | Lista roles |
+| PUT | `/api/roles/{id}` | Si | Admin | Edita nombre y descripcion de rol |
+| PATCH | `/api/roles/{id}/status` | Si | Admin | Activa/inactiva rol sin eliminarlo |
 | POST | `/api/roles/assign` | Si | Admin | Asigna rol |
 | POST | `/api/roles/remove` | Si | Admin | Quita rol |
 | GET | `/api/roles/users/{userId}` | Si | Admin | Roles de usuario |

@@ -97,6 +97,8 @@ dotnet test StartedApi.sln
 - `PATCH /api/users/{id}/status`
 - `POST /api/roles`
 - `GET /api/roles`
+- `PUT /api/roles/{id}`
+- `PATCH /api/roles/{id}/status`
 - `POST /api/roles/assign`
 - `POST /api/roles/remove`
 - `GET /api/roles/users/{userId}`

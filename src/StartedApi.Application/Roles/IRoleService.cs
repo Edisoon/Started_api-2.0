@@ -12,6 +12,16 @@ public interface IRoleService
     Task<OperationResult<IReadOnlyList<RoleResponse>>> ListAsync(
         CancellationToken cancellationToken = default);
 
+    Task<OperationResult<RoleResponse>> UpdateAsync(
+        Guid roleId,
+        UpdateRoleRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<OperationResult<RoleResponse>> UpdateStatusAsync(
+        Guid roleId,
+        UpdateRoleStatusRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<OperationResult<AuthMessageResponse>> AssignAsync(
         AssignRoleRequest request,
         CancellationToken cancellationToken = default);

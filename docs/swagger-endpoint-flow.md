@@ -413,7 +413,69 @@ Endpoint:
 GET /api/roles
 ```
 
-## 18. Asignar rol a usuario
+La respuesta incluye `isActive`, `updatedByUserId` y `deactivatedByUserId` para trazabilidad administrativa.
+
+## 18. Editar rol
+
+Endpoint:
+
+```http
+PUT /api/roles/{id}
+```
+
+Parametro:
+
+```text
+id: GUID_DEL_ROL
+```
+
+Body:
+
+```json
+{
+  "name": "Supervisor",
+  "description": "Supervisor role"
+}
+```
+
+Este endpoint actualiza nombre y descripcion. Tambien registra auditoria con el usuario Admin autenticado que hizo el cambio.
+
+## 19. Activar o inactivar rol
+
+Endpoint:
+
+```http
+PATCH /api/roles/{id}/status
+```
+
+Parametro:
+
+```text
+id: GUID_DEL_ROL
+```
+
+Body para inactivar:
+
+```json
+{
+  "isActive": false,
+  "reason": "Created by mistake"
+}
+```
+
+Body para activar de nuevo:
+
+```json
+{
+  "isActive": true,
+  "reason": "Role enabled again"
+}
+```
+
+No existe borrado fisico de roles. La baja es logica para conservar historial, auditoria y relaciones existentes.
+Un rol inactivo no se puede asignar y tampoco se incluye en nuevos JWT cuando el usuario vuelve a iniciar sesion o refresca token.
+
+## 20. Asignar rol a usuario
 
 Endpoint:
 
@@ -430,9 +492,11 @@ Body:
 }
 ```
 
+Si el rol esta inactivo, la API responde `400 Bad Request` y no permite asignarlo.
+
 Despues de asignar o quitar roles, el usuario debe volver a iniciar sesion para que el JWT refleje los cambios.
 
-## 19. Quitar rol a usuario
+## 21. Quitar rol a usuario
 
 Endpoint:
 
@@ -449,7 +513,9 @@ Body:
 }
 ```
 
-## 20. Consultar roles de un usuario
+Este endpoint no elimina el rol del sistema; solo quita la relacion entre usuario y rol.
+
+## 22. Consultar roles de un usuario
 
 Endpoint:
 
@@ -479,9 +545,11 @@ userId: GUID_DEL_USUARIO
 12. `PATCH /api/users/{id}/status`
 13. `POST /api/roles`
 14. `GET /api/roles`
-15. `POST /api/roles/assign`
-16. `GET /api/roles/users/{userId}`
-17. `POST /api/roles/remove`
-18. `POST /api/auth/confirm-email`, opcional/no requerido en esta configuracion.
-19. `POST /api/auth/revoke-refresh-token`
-20. `POST /api/auth/logout`
+15. `PUT /api/roles/{id}`
+16. `PATCH /api/roles/{id}/status`
+17. `POST /api/roles/assign`
+18. `GET /api/roles/users/{userId}`
+19. `POST /api/roles/remove`
+20. `POST /api/auth/confirm-email`, opcional/no requerido en esta configuracion.
+21. `POST /api/auth/revoke-refresh-token`
+22. `POST /api/auth/logout`

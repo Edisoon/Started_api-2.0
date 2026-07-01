@@ -143,7 +143,7 @@ public sealed class AuthService : IAuthService
         user.LastLoginAtUtc = DateTime.UtcNow;
         await _userManager.UpdateAsync(user);
 
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = await GetActiveRolesAsync(user, cancellationToken);
         var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id, user.Email!, user.UserName!, roles.ToArray(), cancellationToken);
         var refreshToken = _tokenService.GenerateRefreshToken();
         var refreshTokenHash = _refreshTokenHasher.Hash(refreshToken.Token);
@@ -196,7 +196,7 @@ public sealed class AuthService : IAuthService
             return OperationResult<AuthResponse>.Failure("Refresh token is invalid.");
         }
 
-        var roles = await _userManager.GetRolesAsync(storedToken.User);
+        var roles = await GetActiveRolesAsync(storedToken.User, cancellationToken);
         var accessToken = await _tokenService.GenerateAccessTokenAsync(
             storedToken.User.Id,
             storedToken.User.Email!,
@@ -337,8 +337,20 @@ public sealed class AuthService : IAuthService
         {
             Name = roleName,
             Description = $"{roleName} role.",
+            IsActive = true,
             CreatedAtUtc = DateTime.UtcNow
         });
+    }
+
+    private async Task<IReadOnlyList<string>> GetActiveRolesAsync(
+        ApplicationUser user,
+        CancellationToken cancellationToken)
+    {
+        var roleNames = await _userManager.GetRolesAsync(user);
+        return await _roleManager.Roles
+            .Where(role => role.IsActive && role.Name != null && roleNames.Contains(role.Name))
+            .Select(role => role.Name!)
+            .ToListAsync(cancellationToken);
     }
 
     private static UserProfileResponse ToProfile(ApplicationUser user, IReadOnlyList<string> roles) =>

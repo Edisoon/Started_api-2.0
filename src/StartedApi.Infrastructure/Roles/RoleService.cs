@@ -44,6 +44,7 @@ public sealed class RoleService : IRoleService
             Id = Guid.NewGuid(),
             Name = request.Name,
             Description = request.Description ?? string.Empty,
+            IsActive = true,
             CreatedAtUtc = DateTime.UtcNow
         };
 
@@ -68,6 +69,95 @@ public sealed class RoleService : IRoleService
         return OperationResult<IReadOnlyList<RoleResponse>>.Success(roles);
     }
 
+    public async Task<OperationResult<RoleResponse>> UpdateAsync(
+        Guid roleId,
+        UpdateRoleRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var role = await _roleManager.FindByIdAsync(roleId.ToString());
+        if (role is null)
+        {
+            return OperationResult<RoleResponse>.Failure("Role was not found.");
+        }
+
+        var existingRole = await _roleManager.FindByNameAsync(request.Name);
+        if (existingRole is not null && existingRole.Id != role.Id)
+        {
+            return OperationResult<RoleResponse>.Failure("Role already exists.");
+        }
+
+        var previousName = role.Name;
+        role.Name = request.Name;
+        role.Description = request.Description ?? string.Empty;
+        role.UpdatedAtUtc = DateTime.UtcNow;
+        role.UpdatedByUserId = _currentUserService.UserId;
+
+        var result = await _roleManager.UpdateAsync(role);
+        if (!result.Succeeded)
+        {
+            return OperationResult<RoleResponse>.Failure("Role update failed.", result.Errors.Select(error => error.Description).ToArray());
+        }
+
+        await _auditService.RecordAsync(
+            AuditActions.RoleUpdated,
+            _currentUserService.UserId,
+            nameof(ApplicationRole),
+            role.Id.ToString(),
+            $"Role {previousName} updated to {role.Name}.",
+            _currentUserService.IpAddress,
+            _currentUserService.UserAgent,
+            cancellationToken);
+
+        return OperationResult<RoleResponse>.Success(ToResponse(role));
+    }
+
+    public async Task<OperationResult<RoleResponse>> UpdateStatusAsync(
+        Guid roleId,
+        UpdateRoleStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var role = await _roleManager.FindByIdAsync(roleId.ToString());
+        if (role is null)
+        {
+            return OperationResult<RoleResponse>.Failure("Role was not found.");
+        }
+
+        role.IsActive = request.IsActive;
+        role.UpdatedAtUtc = DateTime.UtcNow;
+        role.UpdatedByUserId = _currentUserService.UserId;
+
+        if (request.IsActive)
+        {
+            role.DeactivatedAtUtc = null;
+            role.DeactivatedByUserId = null;
+        }
+        else
+        {
+            role.DeactivatedAtUtc = DateTime.UtcNow;
+            role.DeactivatedByUserId = _currentUserService.UserId;
+        }
+
+        var result = await _roleManager.UpdateAsync(role);
+        if (!result.Succeeded)
+        {
+            return OperationResult<RoleResponse>.Failure("Role status update failed.", result.Errors.Select(error => error.Description).ToArray());
+        }
+
+        var status = request.IsActive ? "activated" : "deactivated";
+        var reason = string.IsNullOrWhiteSpace(request.Reason) ? status : request.Reason;
+        await _auditService.RecordAsync(
+            AuditActions.RoleStatusChanged,
+            _currentUserService.UserId,
+            nameof(ApplicationRole),
+            role.Id.ToString(),
+            $"Role {role.Name} {status}. Reason: {reason}",
+            _currentUserService.IpAddress,
+            _currentUserService.UserAgent,
+            cancellationToken);
+
+        return OperationResult<RoleResponse>.Success(ToResponse(role));
+    }
+
     public async Task<OperationResult<AuthMessageResponse>> AssignAsync(
         AssignRoleRequest request,
         CancellationToken cancellationToken = default)
@@ -78,9 +168,15 @@ public sealed class RoleService : IRoleService
             return OperationResult<AuthMessageResponse>.Failure("User was not found.");
         }
 
-        if (!await _roleManager.RoleExistsAsync(request.RoleName))
+        var role = await _roleManager.FindByNameAsync(request.RoleName);
+        if (role is null)
         {
             return OperationResult<AuthMessageResponse>.Failure("Role was not found.");
+        }
+
+        if (!role.IsActive)
+        {
+            return OperationResult<AuthMessageResponse>.Failure("Role is inactive and cannot be assigned.");
         }
 
         if (await _userManager.IsInRoleAsync(user, request.RoleName))
@@ -133,5 +229,14 @@ public sealed class RoleService : IRoleService
     }
 
     private static RoleResponse ToResponse(ApplicationRole role) =>
-        new(role.Id, role.Name ?? string.Empty, role.Description);
+        new(
+            role.Id,
+            role.Name ?? string.Empty,
+            role.Description,
+            role.IsActive,
+            role.CreatedAtUtc,
+            role.UpdatedAtUtc,
+            role.UpdatedByUserId,
+            role.DeactivatedAtUtc,
+            role.DeactivatedByUserId);
 }

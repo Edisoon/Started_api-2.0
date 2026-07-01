@@ -55,6 +55,17 @@ public sealed class ApplicationDbContext
 
             entity.Property(role => role.CreatedAtUtc)
                 .HasColumnType("datetime2");
+
+            entity.Property(role => role.UpdatedAtUtc)
+                .HasColumnType("datetime2");
+
+            entity.Property(role => role.DeactivatedAtUtc)
+                .HasColumnType("datetime2");
+
+            entity.Property(role => role.IsActive)
+                .HasDefaultValue(true);
+
+            entity.HasIndex(role => role.IsActive);
         });
 
         builder.Entity<RefreshToken>(entity =>
