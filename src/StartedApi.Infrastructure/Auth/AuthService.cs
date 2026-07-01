@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using StartedApi.Application.Audit;
 using StartedApi.Application.Auth;
 using StartedApi.Application.Common;
@@ -24,6 +26,8 @@ public sealed class AuthService : IAuthService
     private readonly IRefreshTokenHasher _refreshTokenHasher;
     private readonly IAuditService _auditService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IHostEnvironment _hostEnvironment;
+    private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         UserManager<ApplicationUser> userManager,
@@ -33,7 +37,9 @@ public sealed class AuthService : IAuthService
         ITokenService tokenService,
         IRefreshTokenHasher refreshTokenHasher,
         IAuditService auditService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IHostEnvironment hostEnvironment,
+        ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -43,6 +49,8 @@ public sealed class AuthService : IAuthService
         _refreshTokenHasher = refreshTokenHasher;
         _auditService = auditService;
         _currentUserService = currentUserService;
+        _hostEnvironment = hostEnvironment;
+        _logger = logger;
     }
 
     public async Task<OperationResult<AuthMessageResponse>> RegisterAsync(
@@ -96,8 +104,25 @@ public sealed class AuthService : IAuthService
             _currentUserService.UserAgent,
             cancellationToken);
 
+        var response = new AuthMessageResponse("User registered successfully. Confirm email before login.");
+        if (_hostEnvironment.IsDevelopment())
+        {
+            var confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            _logger.LogInformation(
+                "Development email confirmation token generated for user {UserId} ({Email}): {ConfirmationToken}",
+                user.Id,
+                user.Email,
+                confirmationToken);
+
+            response = response with
+            {
+                UserId = user.Id,
+                ConfirmationToken = confirmationToken
+            };
+        }
+
         return OperationResult<AuthMessageResponse>.Success(
-            new AuthMessageResponse("User registered successfully. Confirm email before login."),
+            response,
             "User registered successfully.");
     }
 

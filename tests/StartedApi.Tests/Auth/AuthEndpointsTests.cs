@@ -32,6 +32,38 @@ public sealed class AuthEndpointsTests
     }
 
     [Fact]
+    public async Task Register_ReturnsConfirmationToken_InDevelopment_AndConfirmEmailAllowsLogin()
+    {
+        await using var factory = new StartedApiWebApplicationFactory("Development");
+        using var client = factory.CreateClient();
+
+        var request = new RegisterRequest(
+            "dev-confirm@example.com",
+            "Password123!",
+            "Password123!",
+            "Dev",
+            "Confirm");
+
+        using var registerResponse = await client.PostAsJsonAsync("/api/auth/register", request);
+        var registerJson = await JsonDocument.ParseAsync(await registerResponse.Content.ReadAsStreamAsync());
+        var data = registerJson.RootElement.GetProperty("data");
+        var userId = data.GetProperty("userId").GetGuid();
+        var confirmationToken = data.GetProperty("confirmationToken").GetString();
+
+        using var confirmResponse = await client.PostAsJsonAsync(
+            "/api/auth/confirm-email",
+            new ConfirmEmailRequest(userId, confirmationToken!));
+        using var loginResponse = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("dev-confirm@example.com", "Password123!"));
+
+        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        confirmationToken.Should().NotBeNullOrWhiteSpace();
+        confirmResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task Login_ReturnsAccessToken_AndRefreshToken_ForConfirmedUser()
     {
         await using var factory = new StartedApiWebApplicationFactory();

@@ -55,7 +55,9 @@ Resultado esperado:
   "success": true,
   "message": "User registered successfully.",
   "data": {
-    "message": "User registered successfully. Confirm email before login."
+    "message": "User registered successfully. Confirm email before login.",
+    "userId": "GUID_DEL_USUARIO",
+    "confirmationToken": "TOKEN_DE_CONFIRMACION_SOLO_EN_DEVELOPMENT"
   },
   "errors": []
 }
@@ -80,7 +82,18 @@ Body:
 }
 ```
 
-Importante: en la version actual, la API genera el mecanismo de confirmacion usando Identity, pero todavia no envia el token por email ni lo devuelve en modo desarrollo. Para pruebas locales, confirma el usuario directamente en SQL Server:
+En ambiente `Development`, el endpoint de registro devuelve `userId` y `confirmationToken`, y tambien registra el token en los logs de la API.
+
+Usa esos valores en Swagger:
+
+```json
+{
+  "userId": "GUID_DEL_USUARIO_DEVUELTO_EN_REGISTER",
+  "token": "TOKEN_DE_CONFIRMACION_DEVUELTO_EN_REGISTER"
+}
+```
+
+Si estas probando una cuenta creada antes de esta mejora y no tienes el token, puedes confirmar manualmente en SQL Server:
 
 ```sql
 UPDATE AspNetUsers
@@ -464,7 +477,7 @@ userId: GUID_DEL_USUARIO
 ## Orden recomendado completo
 
 1. `POST /api/auth/register`
-2. Confirmar email manualmente en DB o implementar envio de email.
+2. `POST /api/auth/confirm-email` usando `userId` y `confirmationToken` devueltos en Development.
 3. `POST /api/auth/login`
 4. Clic en `Authorize` y pegar `Bearer JWT_ACCESS_TOKEN`.
 5. `GET /api/users/me`

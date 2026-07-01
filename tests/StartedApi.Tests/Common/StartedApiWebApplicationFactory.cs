@@ -15,10 +15,16 @@ namespace StartedApi.Tests.Common;
 internal sealed class StartedApiWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly SqliteConnection _connection = new("Data Source=:memory:");
+    private readonly string _environment;
+
+    public StartedApiWebApplicationFactory(string environment = "Testing")
+    {
+        _environment = environment;
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Testing");
+        builder.UseEnvironment(_environment);
 
         _connection.Open();
 

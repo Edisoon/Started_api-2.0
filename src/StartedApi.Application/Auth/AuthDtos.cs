@@ -42,7 +42,9 @@ public sealed record ChangePasswordRequest(
     string ConfirmPassword);
 
 public sealed record AuthMessageResponse(
-    string Message);
+    string Message,
+    Guid? UserId = null,
+    string? ConfirmationToken = null);
 
 public sealed record AuthResponse(
     string AccessToken,
